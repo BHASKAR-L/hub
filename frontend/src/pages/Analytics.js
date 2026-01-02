@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card } from '../components/ui/card';
 import { toast } from 'sonner';
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const Analytics = () => {
   const [overview, setOverview] = useState(null);
@@ -19,8 +16,8 @@ const Analytics = () => {
   const fetchAnalytics = async () => {
     try {
       const [overviewRes, trendsRes] = await Promise.all([
-        axios.get(`${API}/analytics/overview`),
-        axios.get(`${API}/analytics/trends?days=7`)
+        api.get('/analytics/overview'),
+        api.get('/analytics/trends?days=7')
       ]);
       setOverview(overviewRes.data);
       setTrends(trendsRes.data);

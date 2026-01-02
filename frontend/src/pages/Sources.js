@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { Plus, Pencil, Trash2, FaYoutube, FaXTwitter } from 'lucide-react';
+import api from '../lib/api';
+import { Plus, Pencil, Trash2, Youtube, Twitter, Instagram, Facebook } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
@@ -9,9 +9,6 @@ import { Label } from '../components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Switch } from '../components/ui/switch';
 import { toast } from 'sonner';
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const Sources = () => {
   const [sources, setSources] = useState([]);
@@ -32,7 +29,7 @@ const Sources = () => {
 
   const fetchSources = async () => {
     try {
-      const response = await axios.get(`${API}/sources`);
+      const response = await api.get('/sources');
       setSources(response.data);
     } catch (error) {
       toast.error('Failed to load sources');
@@ -45,28 +42,29 @@ const Sources = () => {
     e.preventDefault();
     try {
       if (editingSource) {
-        await axios.put(`${API}/sources/${editingSource.id}`, formData);
+        await api.put(`/sources/${editingSource.id}`, formData);
         toast.success('Source updated successfully');
       } else {
-        await axios.post(`${API}/sources`, formData);
-        toast.success('Source added successfully');
+        await api.post('/sources', formData);
+        toast.success('Source created successfully');
       }
       setDialogOpen(false);
-      resetForm();
       fetchSources();
+      resetForm();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to save source');
+      toast.error(editingSource ? 'Failed to update source' : 'Failed to create source');
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this source?')) return;
-    try {
-      await axios.delete(`${API}/sources/${id}`);
-      toast.success('Source deleted successfully');
-      fetchSources();
-    } catch (error) {
-      toast.error('Failed to delete source');
+    if (window.confirm('Are you sure you want to delete this source?')) {
+      try {
+        await api.delete(`/sources/${id}`);
+        toast.success('Source deleted successfully');
+        fetchSources();
+      } catch (error) {
+        toast.error('Failed to delete source');
+      }
     }
   };
 
@@ -102,7 +100,7 @@ const Sources = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-heading font-bold tracking-tight">Sources</h1>
-          <p className="text-muted-foreground mt-1">Manage YouTube and X (Twitter) accounts to monitor</p>
+          <p className="text-muted-foreground mt-1">Manage YouTube, X, Instagram, and Facebook accounts to monitor</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
@@ -125,6 +123,8 @@ const Sources = () => {
                   <SelectContent>
                     <SelectItem value="youtube">YouTube</SelectItem>
                     <SelectItem value="x">X (Twitter)</SelectItem>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="facebook">Facebook</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -185,7 +185,7 @@ const Sources = () => {
         <Card className="p-12 text-center" data-testid="no-sources">
           <div className="text-muted-foreground">
             <p className="text-lg font-medium mb-2">No sources configured</p>
-            <p className="text-sm">Add your first YouTube channel or X account to start monitoring</p>
+            <p className="text-sm">Add your first source to start monitoring</p>
           </div>
         </Card>
       ) : (
@@ -194,15 +194,17 @@ const Sources = () => {
             <Card key={source.id} className="p-5" data-testid={`source-card-${index}`}>
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  {source.platform === 'youtube' ? (
-                    <div className="p-2 bg-red-100 rounded-md">
-                      <svg className="h-5 w-5 text-red-600" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
-                    </div>
-                  ) : (
-                    <div className="p-2 bg-blue-100 rounded-md">
-                      <svg className="h-5 w-5 text-blue-600" fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                    </div>
-                  )}
+                  <div className={`p-2 rounded-md ${
+                    source.platform === 'youtube' ? 'bg-red-100 text-red-600' :
+                    source.platform === 'x' ? 'bg-black/10 text-black' :
+                    source.platform === 'instagram' ? 'bg-pink-100 text-pink-600' :
+                    'bg-blue-100 text-blue-600'
+                  }`}>
+                    {source.platform === 'youtube' && <Youtube className="h-5 w-5" />}
+                    {source.platform === 'x' && <Twitter className="h-5 w-5" />}
+                    {source.platform === 'instagram' && <Instagram className="h-5 w-5" />}
+                    {source.platform === 'facebook' && <Facebook className="h-5 w-5" />}
+                  </div>
                   <div>
                     <h3 className="font-semibold text-sm">{source.display_name}</h3>
                     <p className="text-xs text-muted-foreground">{source.identifier}</p>

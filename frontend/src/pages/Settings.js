@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import { Save, Plus, Trash2, Key } from 'lucide-react';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -9,9 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const Settings = () => {
   const [settings, setSettings] = useState(null);
@@ -27,8 +24,8 @@ const Settings = () => {
   const fetchData = async () => {
     try {
       const [settingsRes, keywordsRes] = await Promise.all([
-        axios.get(`${API}/settings`),
-        axios.get(`${API}/keywords`)
+        api.get('/settings'),
+        api.get('/keywords')
       ]);
       setSettings(settingsRes.data);
       setKeywords(keywordsRes.data);
@@ -42,7 +39,7 @@ const Settings = () => {
   const handleSaveSettings = async (e) => {
     e.preventDefault();
     try {
-      await axios.put(`${API}/settings`, settings);
+      await api.put('/settings', settings);
       toast.success('Settings saved successfully');
     } catch (error) {
       toast.error('Failed to save settings');
@@ -52,7 +49,7 @@ const Settings = () => {
   const handleAddKeyword = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API}/keywords`, newKeyword);
+      await api.post('/keywords', newKeyword);
       toast.success('Keyword added successfully');
       setDialogOpen(false);
       setNewKeyword({ category: 'violence', keyword: '' });
@@ -64,7 +61,7 @@ const Settings = () => {
 
   const handleDeleteKeyword = async (id) => {
     try {
-      await axios.delete(`${API}/keywords/${id}`);
+      await api.delete(`/keywords/${id}`);
       toast.success('Keyword deleted successfully');
       fetchData();
     } catch (error) {
@@ -171,6 +168,16 @@ const Settings = () => {
                   value={settings?.x_bearer_token || ''}
                   onChange={(e) => setSettings({...settings, x_bearer_token: e.target.value})}
                   data-testid="x-bearer-token-input"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Facebook/Instagram Access Token</Label>
+                <Input
+                  type="password"
+                  placeholder="Enter Facebook Graph API Token"
+                  value={settings?.facebook_access_token || ''}
+                  onChange={(e) => setSettings({...settings, facebook_access_token: e.target.value})}
+                  data-testid="facebook-token-input"
                 />
               </div>
               <Button type="submit" data-testid="save-api-btn">

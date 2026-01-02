@@ -1,8 +1,6 @@
 import { useState, useEffect, createContext, useContext } from 'react';
-import axios from 'axios';
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
+import api from '../lib/api';
+import { toast } from 'sonner';
 
 const AuthContext = createContext(null);
 
@@ -20,46 +18,56 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      fetchUser();
-    } else {
+    const initAuth = async () => {
+      if (token) {
+        try {
+          const response = await api.get('/auth/me');
+          setUser(response.data);
+        } catch (error) {
+          console.error('Failed to fetch user:', error);
+          logout();
+        }
+      }
       setLoading(false);
-    }
+    };
+
+    initAuth();
   }, [token]);
 
-  const fetchUser = async () => {
-    try {
-      const response = await axios.get(`${API}/auth/me`);
-      setUser(response.data);
-    } catch (error) {
-      console.error('Failed to fetch user:', error);
-      logout();
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const login = async (email, password) => {
-    const response = await axios.post(`${API}/auth/login`, { email, password });
-    const { access_token, user: userData } = response.data;
-    localStorage.setItem('token', access_token);
-    setToken(access_token);
-    setUser(userData);
-    axios.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
-    return userData;
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      const { access_token, user: userData } = response.data;
+      
+      localStorage.setItem('token', access_token);
+      setToken(access_token);
+      setUser(userData);
+      
+      toast.success('Logged in successfully');
+      return userData;
+    } catch (error) {
+      const message = error.response?.data?.message || 'Login failed';
+      toast.error(message);
+      throw error;
+    }
   };
 
   const register = async (email, password, full_name, role = 'analyst') => {
-    await axios.post(`${API}/auth/register`, { email, password, full_name, role });
-    return login(email, password);
+    try {
+      await api.post('/auth/register', { email, password, full_name, role });
+      return login(email, password);
+    } catch (error) {
+      const message = error.response?.data?.message || 'Registration failed';
+      toast.error(message);
+      throw error;
+    }
   };
 
   const logout = () => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
-    delete axios.defaults.headers.common['Authorization'];
+    toast.info('Logged out');
   };
 
   return (

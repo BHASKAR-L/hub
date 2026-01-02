@@ -1,20 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import { ExternalLink, Filter, Search } from 'lucide-react';
 import { Card } from '../components/ui/card';
 import { Input } from '../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { toast } from 'sonner';
 
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
-
 const ContentFeed = () => {
   const [content, setContent] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({
-    platform: '',
-    risk_level: ''
+    platform: 'all',
+    risk_level: 'all'
   });
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -25,9 +22,9 @@ const ContentFeed = () => {
   const fetchContent = async () => {
     try {
       const params = {};
-      if (filters.platform) params.platform = filters.platform;
-      if (filters.risk_level) params.risk_level = filters.risk_level;
-      const response = await axios.get(`${API}/content`, { params });
+      if (filters.platform && filters.platform !== 'all') params.platform = filters.platform;
+      if (filters.risk_level && filters.risk_level !== 'all') params.risk_level = filters.risk_level;
+      const response = await api.get('/content', { params });
       setContent(response.data);
     } catch (error) {
       toast.error('Failed to load content');
@@ -82,9 +79,11 @@ const ContentFeed = () => {
               <SelectValue placeholder="Platform" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Platforms</SelectItem>
+              <SelectItem value="all">All Platforms</SelectItem>
               <SelectItem value="youtube">YouTube</SelectItem>
               <SelectItem value="x">X (Twitter)</SelectItem>
+              <SelectItem value="instagram">Instagram</SelectItem>
+              <SelectItem value="facebook">Facebook</SelectItem>
             </SelectContent>
           </Select>
           <Select value={filters.risk_level} onValueChange={(value) => setFilters({...filters, risk_level: value})}>
@@ -92,7 +91,7 @@ const ContentFeed = () => {
               <SelectValue placeholder="Risk Level" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Risks</SelectItem>
+              <SelectItem value="all">All Risks</SelectItem>
               <SelectItem value="HIGH">High</SelectItem>
               <SelectItem value="MEDIUM">Medium</SelectItem>
               <SelectItem value="LOW">Low</SelectItem>

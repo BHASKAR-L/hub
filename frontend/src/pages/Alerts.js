@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import { AlertTriangle, CheckCircle, Flag, XCircle } from 'lucide-react';
 import { Card } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -7,9 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../components/ui/dialog';
 import { Textarea } from '../components/ui/textarea';
 import { toast } from 'sonner';
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const Alerts = () => {
   const [alerts, setAlerts] = useState([]);
@@ -26,7 +23,7 @@ const Alerts = () => {
   const fetchAlerts = async () => {
     try {
       const params = activeTab !== 'all' ? { status_filter: activeTab } : {};
-      const response = await axios.get(`${API}/alerts`, { params });
+      const response = await api.get('/alerts', { params });
       setAlerts(response.data);
     } catch (error) {
       toast.error('Failed to load alerts');
@@ -37,7 +34,7 @@ const Alerts = () => {
 
   const handleUpdateStatus = async (alertId, status) => {
     try {
-      await axios.put(`${API}/alerts/${alertId}`, { status, notes });
+      await api.put(`/alerts/${alertId}`, { status, notes });
       toast.success(`Alert ${status}`);
       setDialogOpen(false);
       setNotes('');

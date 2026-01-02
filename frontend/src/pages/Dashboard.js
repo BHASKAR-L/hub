@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../lib/api';
 import { Shield, AlertTriangle, Activity, Rss, TrendingUp, TrendingDown } from 'lucide-react';
 import { Card } from '../components/ui/card';
 import { toast } from 'sonner';
-
-const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
-const API = `${BACKEND_URL}/api`;
 
 const Dashboard = () => {
   const [overview, setOverview] = useState(null);
@@ -19,8 +16,8 @@ const Dashboard = () => {
   const fetchData = async () => {
     try {
       const [overviewRes, alertsRes] = await Promise.all([
-        axios.get(`${API}/analytics/overview`),
-        axios.get(`${API}/alerts?status_filter=active`)
+        api.get('/analytics/overview'),
+        api.get('/alerts?status=active')
       ]);
       setOverview(overviewRes.data);
       setRecentAlerts(alertsRes.data.slice(0, 5));
