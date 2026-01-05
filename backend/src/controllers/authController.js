@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
+const { createAuditLog } = require('../services/auditService');
 
 const generateToken = (id) => {
   return jwt.sign({ user_id: id }, process.env.JWT_SECRET || 'blura-hub-secret-key-change-in-production', {
@@ -69,6 +70,8 @@ const login = async (req, res) => {
         return res.status(403).json({ message: 'Account is inactive' });
       }
 
+      await createAuditLog(user, 'login', 'user', user.id, { ip: req.ip });
+
       res.json({
         access_token: generateToken(user.id),
         token_type: 'bearer',
@@ -80,6 +83,8 @@ const login = async (req, res) => {
         }
       });
     } else {
+      // Optional: Log failed login attempts
+      // await createAuditLog({ id: 'system', name: 'System' }, 'failed_login', 'user', null, { email, ip: req.ip });
       res.status(401).json({ message: 'Invalid credentials' });
     }
   } catch (error) {

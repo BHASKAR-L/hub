@@ -29,6 +29,9 @@ const contentSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  scraped_content: {
+    type: String
+  },
   author: {
     type: String,
     required: true

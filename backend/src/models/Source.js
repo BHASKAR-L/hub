@@ -22,7 +22,7 @@ const sourceSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['news', 'influencer', 'political', 'unknown'],
+    enum: ['news', 'influencer', 'political', 'entertainment', 'sports', 'technology', 'business', 'education', 'health', 'lifestyle', 'gaming', 'unknown'],
     default: 'unknown'
   },
   is_active: {

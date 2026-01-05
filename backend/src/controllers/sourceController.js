@@ -92,9 +92,36 @@ const deleteSource = async (req, res) => {
   }
 };
 
+// @desc    Manual check source
+// @route   POST /api/sources/:id/check
+// @access  Private
+const manualCheck = async (req, res) => {
+  try {
+    const source = await Source.findOne({ id: req.params.id });
+
+    if (!source) {
+      return res.status(404).json({ message: 'Source not found' });
+    }
+
+    // Simulate check logic or call a service
+    source.last_checked = new Date();
+    await source.save();
+
+    await createAuditLog(req.user, 'manual_check', 'source', req.params.id, { 
+      display_name: source.display_name,
+      status: 'checked'
+    });
+
+    res.status(200).json({ message: 'Manual check initiated', source });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   getSources,
   createSource,
   updateSource,
-  deleteSource
+  deleteSource,
+  manualCheck
 };

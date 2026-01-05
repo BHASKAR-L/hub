@@ -5,10 +5,18 @@ const AuditLog = require('../models/AuditLog');
 // @access  Private
 const getAuditLogs = async (req, res) => {
   try {
-    const { limit = 100, resource_type } = req.query;
+    const { limit = 100, resource_type, action, user_id, start_date, end_date } = req.query;
     const query = {};
 
-    if (resource_type) query.resource_type = resource_type;
+    if (resource_type && resource_type !== 'all') query.resource_type = resource_type;
+    if (action && action !== 'all') query.action = action;
+    if (user_id) query['user.id'] = user_id;
+    
+    if (start_date || end_date) {
+      query.timestamp = {};
+      if (start_date) query.timestamp.$gte = new Date(start_date);
+      if (end_date) query.timestamp.$lte = new Date(end_date);
+    }
 
     const logs = await AuditLog.find(query)
       .sort({ timestamp: -1 })

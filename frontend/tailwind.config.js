@@ -54,9 +54,15 @@ module.exports = {
         sm: 'calc(var(--radius) - 4px)',
       },
       fontFamily: {
-        sans: ['IBM Plex Sans', 'sans-serif'],
-        heading: ['Chivo', 'sans-serif'],
+        sans: ['Inter', 'sans-serif'],
+        heading: ['Oswald', 'sans-serif'],
         mono: ['JetBrains Mono', 'monospace'],
+      },
+      colors: {
+        'police-navy': 'hsl(var(--police-navy))',
+        'police-gold': 'hsl(var(--police-gold))',
+        'police-badge': 'hsl(var(--police-badge))',
+        'police-silver': 'hsl(var(--police-silver))',
       },
     },
   },

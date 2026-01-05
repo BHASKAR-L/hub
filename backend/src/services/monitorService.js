@@ -8,6 +8,50 @@ const Settings = require('../models/Settings');
 const { analyzeContent } = require('./analysisService');
 const { sendAlertEmail } = require('./emailService');
 
+// Helper to extract and fetch URL content
+const extractAndFetchUrlContent = async (text) => {
+  try {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const urls = text.match(urlRegex);
+    
+    if (!urls || urls.length === 0) return '';
+
+    let scrapedText = '';
+    
+    // Limit to first 2 URLs to avoid timeout/spam
+    for (const url of urls.slice(0, 2)) {
+      try {
+        // Skip internal or known media URLs if needed
+        if (url.includes('youtube.com') || url.includes('twitter.com') || url.includes('x.com')) continue;
+
+        const response = await fetch(url, { signal: AbortSignal.timeout(5000) }); // 5s timeout
+        if (!response.ok) continue;
+        
+        const html = await response.text();
+        
+        // Simple regex extraction
+        const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+        const title = titleMatch ? titleMatch[1].trim() : '';
+        
+        const descMatch = html.match(/<meta\s+name=["']description["']\s+content=["']([^"']+)["']/i) ||
+                          html.match(/<meta\s+content=["']([^"']+)["']\s+name=["']description["']/i);
+        const description = descMatch ? descMatch[1].trim() : '';
+
+        if (title || description) {
+          scrapedText += ` [Link Content: ${title} - ${description}]`;
+        }
+      } catch (err) {
+        // Ignore fetch errors
+        console.log(`Failed to fetch URL ${url}: ${err.message}`);
+      }
+    }
+    return scrapedText;
+  } catch (error) {
+    console.error('Error in URL extraction:', error);
+    return '';
+  }
+};
+
 const monitorYoutubeSource = async (source, apiKey) => {
   try {
     const youtube = google.youtube({
@@ -46,12 +90,16 @@ const monitorYoutubeSource = async (source, apiKey) => {
       const snippet = videoData.snippet;
       const stats = videoData.statistics;
 
+      const baseText = `${snippet.title} ${snippet.description}`;
+      const scrapedContent = await extractAndFetchUrlContent(baseText);
+
       const content = new Content({
         source_id: source.id,
         platform: 'youtube',
         content_id: videoId,
         content_url: `https://www.youtube.com/watch?v=${videoId}`,
-        text: `${snippet.title} ${snippet.description}`,
+        text: baseText + scrapedContent,
+        scraped_content: scrapedContent,
         author: snippet.channelTitle,
         author_handle: source.identifier,
         published_at: new Date(snippet.publishedAt),
@@ -109,12 +157,15 @@ const monitorXSource = async (source, bearerToken) => {
       const existing = await Content.findOne({ content_id: tweetId });
       if (existing) continue;
 
+      const scrapedContent = await extractAndFetchUrlContent(tweet.text);
+
       const content = new Content({
         source_id: source.id,
         platform: 'x',
         content_id: tweetId,
         content_url: `https://x.com/${source.identifier}/status/${tweetId}`,
-        text: tweet.text,
+        text: tweet.text + scrapedContent,
+        scraped_content: scrapedContent,
         author: source.display_name,
         author_handle: source.identifier,
         published_at: new Date(tweet.created_at),

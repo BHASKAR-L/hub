@@ -91,8 +91,8 @@ const seedSources = async () => {
 
       let identifier = source.identifier;
 
-      // Resolve YouTube handle to Channel ID if needed
-      if (source.platform === 'youtube' && identifier.startsWith('@') && youtube) {
+      // Resolve YouTube handle/name to Channel ID if needed
+      if (source.platform === 'youtube' && !identifier.startsWith('UC') && youtube) {
         try {
           const response = await youtube.search.list({
             part: 'snippet',
